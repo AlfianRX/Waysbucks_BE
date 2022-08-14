@@ -14,41 +14,41 @@ type ToppingRepository interface {
 	DeleteTopping(topping models.Topping) (models.Topping, error)
 }
 
-type repository struct {
+type repositoryTopping struct {
 	db *gorm.DB
 }
 
-func RepositoryTopping(db *gorm.DB) *repository {
-	return &repository{db}
+func RepositoryTopping(db *gorm.DB) *repositoryTopping {
+	return &repositoryTopping{db}
 }
 
-func (r *repository) FindToppings() ([]models.Topping, error) {
+func (r *repositoryTopping) FindToppings() ([]models.Topping, error) {
 	var toppings []models.Topping
 	err := r.db.Find(&toppings).Error
 
 	return toppings, err
 }
 
-func (r *repository) GetTopping(ID int) (models.Topping, error) {
+func (r *repositoryTopping) GetTopping(ID int) (models.Topping, error) {
 	var topping models.Topping
 	err := r.db.First(&topping, ID).Error
 
 	return topping, err
 }
 
-func (r *repository) CreateTopping(topping models.Topping) (models.Topping, error) {
+func (r *repositoryTopping) CreateTopping(topping models.Topping) (models.Topping, error) {
 	err := r.db.Create(&topping).Error
 
 	return topping, err
 }
 
-func (r *repository) UpdateTopping(topping models.Topping) (models.Topping, error) {
+func (r *repositoryTopping) UpdateTopping(topping models.Topping) (models.Topping, error) {
 	err := r.db.Debug().Save(&topping).Error
 
 	return topping, err
 }
 
-func (r *repository) DeleteTopping(topping models.Topping) (models.Topping, error) {
+func (r *repositoryTopping) DeleteTopping(topping models.Topping) (models.Topping, error) {
 	err := r.db.Delete(&topping).Error
 
 	return topping, err

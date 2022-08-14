@@ -8,7 +8,7 @@ import (
 )
 
 func RunMigration() {
-	err := mysql.DB.AutoMigrate(&models.Topping{})
+	err := mysql.DB.AutoMigrate(&models.Topping{}, &models.Product{})
 
 	if err != nil {
 		fmt.Println(err)

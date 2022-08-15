@@ -2,6 +2,7 @@ package routes
 
 import (
 	"back_end_waysbucks/handlers"
+	"back_end_waysbucks/pkg/middleware"
 	"back_end_waysbucks/pkg/mysql"
 	"back_end_waysbucks/repositories"
 
@@ -14,7 +15,7 @@ func ToppingRoutes(r *mux.Router) {
 
 	r.HandleFunc("/topping", h.FindToppings).Methods("GET")
 	r.HandleFunc("/topping/{id}", h.GetTopping).Methods("GET")
-	r.HandleFunc("/topping", h.CreateTopping).Methods("POST")
+	r.HandleFunc("/topping", middleware.UploadFile(h.CreateTopping)).Methods("POST")
 	r.HandleFunc("/topping/{id}", h.UpdateTopping).Methods("PATCH")
 	r.HandleFunc("/topping/{id}", h.DeleteTopping).Methods("DELETE")
 

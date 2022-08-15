@@ -21,18 +21,24 @@ func HandlerProduct(ProductRepository repositories.ProductRepository) *handlerPr
 	return &handlerProduct{ProductRepository}
 }
 
+var path_file = "http://localhost:5000/uploads/"
+
 func (h *handlerProduct) FindProducts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	toppings, err := h.ProductRepository.FindProducts()
+	products, err := h.ProductRepository.FindProducts()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Status: http.StatusBadRequest, Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
 	}
 
+	for i, p := range products {
+		products[i].Image = path_file + p.Image
+	}
+
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Status: http.StatusOK, Data: toppings}
+	response := dto.SuccessResult{Status: http.StatusOK, Data: products}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -49,6 +55,8 @@ func (h *handlerProduct) GetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	product.Image = path_file + product.Image
+
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Status: http.StatusOK, Data: convertResponseProduct(product)}
 	json.NewEncoder(w).Encode(response)
@@ -57,12 +65,13 @@ func (h *handlerProduct) GetProduct(w http.ResponseWriter, r *http.Request) {
 func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(productsdto.CreateProductRequest)
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Status: http.StatusBadRequest, Message: err.Error()}
-		json.NewEncoder(w).Encode(response)
-		return
+	dataContex := r.Context().Value("dataFile")
+	filename := dataContex.(string)
+
+	price, _ := strconv.Atoi(r.FormValue("price"))
+	request := productsdto.CreateProductRequest{
+		Title: r.FormValue("title"),
+		Price: price,
 	}
 
 	validation := validator.New()
@@ -77,7 +86,7 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	product := models.Product{
 		Title: request.Title,
 		Price: request.Price,
-		Image: request.Image,
+		Image: filename,
 	}
 
 	data, err := h.ProductRepository.CreateProduct(product)
@@ -87,6 +96,8 @@ func (h *handlerProduct) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+
+	product, _ = h.ProductRepository.GetProduct(product.ID)
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Status: http.StatusOK, Data: convertResponseProduct(data)}

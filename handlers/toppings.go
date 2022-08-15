@@ -21,6 +21,8 @@ func HandlerTopping(ToppingRepository repositories.ToppingRepository) *handlerTo
 	return &handlerTopping{ToppingRepository}
 }
 
+var path_fileTopping = "http://localhost:5000/uploads/"
+
 func (h *handlerTopping) FindToppings(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -29,6 +31,10 @@ func (h *handlerTopping) FindToppings(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := dto.ErrorResult{Status: http.StatusBadRequest, Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
+	}
+
+	for i, p := range toppings {
+		toppings[i].Image = path_fileTopping + p.Image
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -49,6 +55,8 @@ func (h *handlerTopping) GetTopping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	topping.Image = path_fileTopping + topping.Image
+
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Status: http.StatusOK, Data: convertResponse(topping)}
 	json.NewEncoder(w).Encode(response)
@@ -57,12 +65,13 @@ func (h *handlerTopping) GetTopping(w http.ResponseWriter, r *http.Request) {
 func (h *handlerTopping) CreateTopping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(toppingsdto.CreateToppingRequest)
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Status: http.StatusBadRequest, Message: err.Error()}
-		json.NewEncoder(w).Encode(response)
-		return
+	dataContex := r.Context().Value("dataFile")
+	filename := dataContex.(string)
+
+	price, _ := strconv.Atoi(r.FormValue("price"))
+	request := toppingsdto.CreateToppingRequest{
+		Title: r.FormValue("title"),
+		Price: price,
 	}
 
 	validation := validator.New()
@@ -77,7 +86,7 @@ func (h *handlerTopping) CreateTopping(w http.ResponseWriter, r *http.Request) {
 	topping := models.Topping{
 		Title: request.Title,
 		Price: request.Price,
-		Image: request.Image,
+		Image: filename,
 	}
 
 	data, err := h.ToppingRepository.CreateTopping(topping)
@@ -87,6 +96,8 @@ func (h *handlerTopping) CreateTopping(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+
+	topping, _ = h.ToppingRepository.GetTopping(topping.ID)
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Status: http.StatusOK, Data: convertResponse(data)}
